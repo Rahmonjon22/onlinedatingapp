@@ -4,8 +4,8 @@ const express = require('express');
 const exphbs = require('express-handlebars');
 // those above are for dependencies from package.json
 const app = express(); 
-//
-const port = 3000; 
+// enviroment variable for port in github. i use 3000 for development only
+const port = process.env.PORT || 3000; 
 // assign port as value
 app.engine('handlebars', exphbs({defaultLayout:'main'}));
 // setup view engine method. 
