@@ -3,8 +3,36 @@
 const express = require('express');
 const exphbs = require('express-handlebars');
 // those above are for dependencies from package.json
+const bodyParser = require('body-parser');
+// use body parser middleware for post 
+const mongoose = require('mongoose');
+// mongoose is used to create collection, therefore i created models file in views.
+
+const Message = require('./models/message.js');
+// load models imported and stored in Message collection.
+
+const Keys = require('./config/keys.js');
+
+mongoose.connect(Keys.MongoDB).then (() => {
+    console.log(`Server is connected to MongoDB`);
+}).catch((err) => {
+    console.log(err);
+});
+
 const app = express(); 
 // enviroment variable for port in github. i use 3000 for development only
+
+app.use(bodyParser.urlencoded({extended:false})); 
+//  it has urlecoded method to access object and make it false because we only want to recieve form data
+app.use(bodyParser.json()); // Javascript object notation. when we recev
+/** now i can see in terminal that it worked like this
+ * [Object: null prototype] {
+  fullname: 'Rahmonjon Ibragimov',
+  email: 'rahmonjon2@yahoo.com',
+  message: 'Hello I am learning'
+}
+ */
+
 const port = process.env.PORT || 3000; 
 // assign port as value
 app.engine('handlebars', exphbs({defaultLayout:'main'}));
@@ -30,6 +58,13 @@ app.get('/contact', (req, res)=> {
         title: 'Contact'
     });
 });
+
+app.post('/contactUs', (req, res)=> {
+    console.log(req.body);
+}); 
+// POST is used to send data to a server to create/update a resource. when i write in browser something. it shows undefined, so i have to parse init.
+// npm install --save body-parser it is in package
+
 
 app.listen(port,() =>{
     // console.log('Server is running on port' + port); instead of using concatinate, i can use with backtic & dollar sign and inject port in it.
