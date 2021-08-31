@@ -1,25 +1,37 @@
 // here we write JS to build the server
 
 const express = require('express');
+
+const Handlebars = require('handlebars');
+
 const exphbs = require('express-handlebars');
 // those above are for dependencies from package.json
+const {allowInsecurePrototypeAccess} = require('@handlebars/allow-prototype-access');
+const app = express();
+
+app.engine('handlebars', exphbs({
+handlebars: allowInsecurePrototypeAccess(Handlebars)
+}));
+app.set('view engine', 'handlebars');
+
+
 const bodyParser = require('body-parser');
 // use body parser middleware for post 
 const mongoose = require('mongoose');
 // mongoose is used to create collection, therefore i created models file in views.
 
 const Message = require('./models/message.js');
-// load models imported and stored in Message collection.
+// load models imported and stored in Message collection. it contains message.js from models file
 
 const Keys = require('./config/keys.js');
 
-mongoose.connect(Keys.MongoDB).then (() => {
+mongoose.connect(Keys.MongoDB, {useNewUrlParser: true}).then (() => {
     console.log(`Server is connected to MongoDB`);
 }).catch((err) => {
     console.log(err);
 });
 
-const app = express(); 
+// const app = express(); 
 // enviroment variable for port in github. i use 3000 for development only
 
 app.use(bodyParser.urlencoded({extended:false})); 
@@ -61,6 +73,30 @@ app.get('/contact', (req, res)=> {
 
 app.post('/contactUs', (req, res)=> {
     console.log(req.body);
+    const newMessage = {
+        fullname: req.body.fullname,
+        email: req.body.email,
+        message: req.body.message,
+        date: new Date()
+    }
+    new Message(newMessage).save((err, message)=> {
+        if (err) {
+            throw err;
+        } else {
+            Message.find({}).then((messages) => {
+                if (messages) {
+                    res.render('newmessage', {
+                        title: 'Sent',
+                        messages: messages
+                    });
+                } else {
+                    res.render('noMessage', {
+                        title: 'Not Found'
+                    });
+                }
+            });
+        }
+    });
 }); 
 // POST is used to send data to a server to create/update a resource. when i write in browser something. it shows undefined, so i have to parse init.
 // npm install --save body-parser it is in package
