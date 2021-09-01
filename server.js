@@ -1,38 +1,29 @@
-// here we write JS to build the server
-
 const express = require('express');
+const exphbs = require('express-handlebars');
+const bodyParser = require('body-parser');
+const mongoose = require('mongoose'); 
+const passport = require('passport');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+
+//Load models
 
 const Handlebars = require('handlebars');
-
-const exphbs = require('express-handlebars');
-// those above are for dependencies from package.json
-const {allowInsecurePrototypeAccess} = require('@handlebars/allow-prototype-access');
 const app = express();
 
+const User = require('./models/user.js');
+const Keys = require('./config/keys.js');
+const Message = require('./models/message.js');
+// load key file
+
+const port = process.env.PORT || 3000; 
+
+const {allowInsecurePrototypeAccess} = require('@handlebars/allow-prototype-access');
 app.engine('handlebars', exphbs({
 handlebars: allowInsecurePrototypeAccess(Handlebars)
 }));
 app.set('view engine', 'handlebars');
 
-
-const bodyParser = require('body-parser');
-// use body parser middleware for post 
-const mongoose = require('mongoose');
-// mongoose is used to create collection, therefore i created models file in views.
-
-const Message = require('./models/message.js');
-// load models imported and stored in Message collection. it contains message.js from models file
-
-const Keys = require('./config/keys.js');
-
-mongoose.connect(Keys.MongoDB, {useNewUrlParser: true}).then (() => {
-    console.log(`Server is connected to MongoDB`);
-}).catch((err) => {
-    console.log(err);
-});
-
-// const app = express(); 
-// enviroment variable for port in github. i use 3000 for development only
 
 app.use(bodyParser.urlencoded({extended:false})); 
 //  it has urlecoded method to access object and make it false because we only want to recieve form data
@@ -42,10 +33,27 @@ app.use(bodyParser.json()); // Javascript object notation. when we recev
   fullname: 'Rahmonjon Ibragimov',
   email: 'rahmonjon2@yahoo.com',
   message: 'Hello I am learning'
-}
- */
+} */
 
-const port = process.env.PORT || 3000; 
+app.use(cookieParser());
+app.use(session({
+    secret: 'mysecret',
+    resave: true,
+    saveUninitialized: true
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+// configuration for authentication
+
+require('./passport/facebook.js');
+
+mongoose.connect(Keys.MongoDB, {useNewUrlParser: true}).then (() => {
+    console.log(`Server is connected to MongoDB`);
+}).catch((err) => {
+    console.log(err);
+}); 
+
 // assign port as value
 app.engine('handlebars', exphbs({defaultLayout:'main'}));
 // setup view engine method. 
@@ -56,8 +64,6 @@ app.get('/', (req, res) => {
         title: 'Home'
     });
 }); 
-// I used get method to handle the route, / means homepage, and req => is incoming request from client, res => is respond from backend to the client
-// res.send method is used to send message to the client
 
 app.get('/about', (req, res) => {
     res.render('about', {
@@ -70,6 +76,14 @@ app.get('/contact', (req, res)=> {
         title: 'Contact'
     });
 });
+
+app.get('/auth/facebook', passport.authenticate('facebook', {
+    scope: ['email']
+}));
+app.get('/auth/facebook/callback', passport.authenticate('facebook', {
+    successRedirect: '/profile',
+    failerRedirect: '/'
+}));
 
 app.post('/contactUs', (req, res)=> {
     console.log(req.body);
