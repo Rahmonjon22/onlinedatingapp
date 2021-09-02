@@ -3,28 +3,22 @@
 const express = require("express");
 const exphbs = require("express-handlebars");
 // those above are for dependencies from package.json
-const bodyParser = require("body-parser");
+// const bodyParser = require("body-parser");
 // use body parser middleware for post
 const mongoose = require("mongoose");
 // mongoose is used to create collection, therefore i created models file in views.
+const messageController = require("./controllers/messageController.js");
 
-const Message = require("./models/message.js");
+// const Message = require("./models/message.js");
 // load models imported and stored in Message collection.
-
-// const Keys = require("./config/keys.js");
-
-// mongoose.connect(Keys.MongoDB).then (() => {
-//     console.log(`Server is connected to MongoDB`);
-// }).catch((err) => {
-//     console.log(err);
-// });
+const path = require("path");
 
 const app = express();
 // enviroment variable for port in github. i use 3000 for development only
 
-app.use(bodyParser.urlencoded({ extended: false }));
+// app.use(bodyParser.urlencoded({ extended: false }));
 //  it has urlecoded method to access object and make it false because we only want to recieve form data
-app.use(bodyParser.json()); // Javascript object notation. when we recev
+// app.use(bodyParser.json()); // Javascript object notation. when we recev
 /** now i can see in terminal that it worked like this
  * [Object: null prototype] {
   fullname: 'Rahmonjon Ibragimov',
@@ -39,6 +33,9 @@ app.engine("handlebars", exphbs({ defaultLayout: "main" }));
 // setup view engine method.
 app.set("view engine", "handlebars");
 //
+app.use(express.static(__dirname + "/public/stylesheets/"));
+app.use(express.urlencoded({ extended: true }));
+
 app.get("/", (req, res) => {
   res.render("home", {
     title: "Home",
@@ -64,6 +61,8 @@ app.post("/contactUs", (req, res) => {
 });
 // POST is used to send data to a server to create/update a resource. when i write in browser something. it shows undefined, so i have to parse init.
 // npm install --save body-parser it is in package
+
+app.use("/", messageController);
 
 app.listen(port, () => {
   // console.log('Server is running on port' + port); instead of using concatinate, i can use with backtic & dollar sign and inject port in it.
