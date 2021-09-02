@@ -5,25 +5,29 @@ const mongoose = require('mongoose');
 const passport = require('passport');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
-
+const Handlebars = require('handlebars');
+const {allowInsecurePrototypeAccess} = require('@handlebars/allow-prototype-access');
+const messageController = require("./controllers/messageController.js");
 //Load models
 
-const Handlebars = require('handlebars');
+
 const app = express();
+const port = process.env.PORT || 3000; 
 
 const User = require('./models/user.js');
 const Keys = require('./config/keys.js');
 const Message = require('./models/message.js');
 // load key file
 
-const port = process.env.PORT || 3000; 
 
-const {allowInsecurePrototypeAccess} = require('@handlebars/allow-prototype-access');
 app.engine('handlebars', exphbs({
-handlebars: allowInsecurePrototypeAccess(Handlebars)
+    defaultLayout: 'main',
+    handlebars: allowInsecurePrototypeAccess(Handlebars)
 }));
 app.set('view engine', 'handlebars');
 
+app.use(express.static(__dirname + "/public/stylesheets/"));
+app.use(express.urlencoded({ extended: true }));
 
 app.use(bodyParser.urlencoded({extended:false})); 
 //  it has urlecoded method to access object and make it false because we only want to recieve form data
@@ -84,6 +88,16 @@ app.get('/auth/facebook/callback', passport.authenticate('facebook', {
     successRedirect: '/profile',
     failerRedirect: '/'
 }));
+app.get('/profile', (req, res) => {
+    User.findById({_id: req.user._id}).then((user) => {
+        if(user) {
+            res.render('profile', {
+                title: 'Profile',
+                user:user
+            });
+        }
+    });
+});
 
 app.post('/contactUs', (req, res)=> {
     console.log(req.body);
@@ -97,10 +111,10 @@ app.post('/contactUs', (req, res)=> {
         if (err) {
             throw err;
         } else {
-            Message.find({}).then((messages) => {
+            Message.find({}).lean().then((messages) => {
                 if (messages) {
                     res.render('newmessage', {
-                        title: 'Sent',
+                        title: 'Sent', 
                         messages: messages
                     });
                 } else {
@@ -112,8 +126,11 @@ app.post('/contactUs', (req, res)=> {
         }
     });
 }); 
+
 // POST is used to send data to a server to create/update a resource. when i write in browser something. it shows undefined, so i have to parse init.
 // npm install --save body-parser it is in package
+
+app.use("/", messageController);
 
 
 app.listen(port,() =>{
